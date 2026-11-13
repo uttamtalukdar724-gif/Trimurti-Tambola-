@@ -1,0 +1,1880 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TRIMURTI TAMBOLA - Live Housie Arena &amp; Coupon Booking</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@500;600;700;800;900&family=Roboto+Mono:wght@700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --arena-bg: #e60000;
+      --banner-bg: #00ffff;
+      --banner-border: #00cccc;
+      --banner-text: #0b2528;
+      --subbanner-bg: #33ffff;
+      --strip-bg: #7f1d1d;
+      --board-cell-bg: #008000;
+      --board-cell-border: #38b000;
+      --accent-bar-bg: #ffd700;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--arena-bg);
+      color: #111827;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .font-banner {
+      font-family: 'Anton', Impact, sans-serif;
+      letter-spacing: 0.03em;
+    }
+
+    .font-mono-timer {
+      font-family: 'Roboto Mono', monospace;
+    }
+
+    @keyframes popIn {
+      0% { transform: scale(0.6); opacity: 0; }
+      75% { transform: scale(1.08); }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    .animate-pop {
+      animation: popIn 0.28s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    }
+
+    /* Master Board 1-90 Styling */
+    .board-cell {
+      background-color: var(--board-cell-bg);
+      color: #ffffff;
+      border: 1px solid var(--board-cell-border);
+      font-weight: 800;
+      transition: background-color 0.2s ease, transform 0.15s ease;
+    }
+    .board-cell.called {
+      background-color: #ff0000;
+      color: #ffffff;
+      border-color: #ffcccc;
+      box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.35);
+    }
+    .board-cell.latest {
+      background-color: #ff0000;
+      color: #ffff00;
+      border: 2px solid #ffffff;
+      transform: scale(1.06);
+      z-index: 2;
+    }
+
+    .declared-badge {
+      background-color: #e60000;
+      color: #ffffff;
+      border: 2px solid #ffffff;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.35);
+    }
+    .declared-badge.latest-badge {
+      background-color: #ffd700;
+      color: #000000;
+      border: 3px solid #ffffff;
+      transform: scale(1.12);
+    }
+
+    .keypad-num-btn {
+      background-color: #aeea00;
+      color: #000000;
+      border: 1px solid #7cb342;
+      box-shadow: 0 2px 0 #558b2f;
+    }
+    .keypad-num-btn:active {
+      transform: translateY(2px);
+      box-shadow: none;
+    }
+    .keypad-action-btn {
+      background-color: #ffd700;
+      color: #000000;
+      border: 1px solid #e6b800;
+      box-shadow: 0 2px 0 #b38f00;
+    }
+    .keypad-action-btn:active {
+      transform: translateY(2px);
+      box-shadow: none;
+    }
+
+    .ticket-pregame-wrapper {
+      background-color: var(--arena-bg);
+    }
+    .ticket-pregame-grid {
+      background-color: #0000ff;
+      border: 2px solid #0000ff;
+    }
+    .ticket-pregame-cell {
+      background-color: #ffffff;
+      color: #000000;
+    }
+
+    .ticket-live-wrapper {
+      background-color: #c5b3e6;
+      border: 2px solid #9575cd;
+    }
+    .ticket-live-cell {
+      background-color: #29b6f6;
+      color: #000000;
+      border-radius: 3px;
+    }
+    .ticket-live-cell.daubed {
+      background-color: #ff0000 !important;
+      color: #ffffff !important;
+      font-weight: 900;
+      box-shadow: 0 0 0 1px #ffffff inset;
+      animation: popIn 0.25s ease-out;
+    }
+
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col select-none">
+
+  <!-- Main Mobile-First Centered Container -->
+  <div id="arena-shell" class="w-full max-w-xl mx-auto min-h-screen flex flex-col shadow-2xl" style="background-color: var(--arena-bg);">
+
+    <!-- HEADER -->
+    <header class="w-full">
+      <div class="px-2 py-2 text-center border-b-2 relative" style="background-color: var(--banner-bg); border-color: var(--banner-border);">
+        <h1 id="club-title-display" class="font-banner text-4xl sm:text-5xl tracking-wide uppercase leading-none drop-shadow-xs" style="color: var(--banner-text);">
+          TRIMURTI TAMBOLA
+        </h1>
+        <p id="club-tagline-display" class="hidden text-[11px] font-extrabold uppercase tracking-wider mt-0.5" style="color: var(--banner-text);">
+          Live Housie Arena &amp; Instant Ticket Booking
+        </p>
+      </div>
+
+      <div class="px-2.5 py-1.5 flex items-center justify-between text-xs sm:text-sm font-bold text-slate-900 border-b-2 border-black/20" style="background-color: var(--subbanner-bg);">
+        <div class="flex items-center gap-1.5 truncate">
+          <span>📅</span>
+          <span id="event-datetime-display" class="truncate">10 Nov 2026 at 8:30 PM</span>
+        </div>
+
+        <div class="flex items-center gap-1.5 shrink-0">
+          <span id="live-clock-display" class="font-mono-timer text-xs sm:text-sm font-extrabold text-slate-900 bg-white/70 px-1.5 py-0.5 rounded">
+            00:00:00
+          </span>
+          <button id="btn-toggle-admin" onclick="handleHostButtonClick()" class="bg-slate-900 hover:bg-slate-800 text-amber-300 text-[11px] font-extrabold px-2.5 py-1 rounded shadow cursor-pointer transition flex items-center gap-1">
+            <span>⚙️ Host Control</span>
+          </button>
+        </div>
+      </div>
+
+      <div id="call-host-strip" class="text-white px-2.5 py-1.5 flex items-center justify-between gap-2 text-[11px] sm:text-xs" style="background-color: var(--strip-bg);">
+        <div class="flex items-center gap-1.5 truncate">
+          <span id="sync-dot" class="w-2 h-2 rounded-full bg-lime-400 inline-block shrink-0"></span>
+          <span id="sync-status-text" class="font-semibold text-white/90 truncate">Host Unlocked • Sync Ready</span>
+        </div>
+        <a id="call-host-link" href="tel:+919876543210" class="bg-[#aeea00] hover:bg-lime-300 text-black font-extrabold px-2.5 py-0.5 rounded-full flex items-center gap-1 shadow-xs transition shrink-0">
+          <span id="call-host-label">📞 Call Host to Buy</span>
+        </a>
+      </div>
+    </header>
+
+    <!-- ADMIN PANEL (5 TABS) -->
+    <section id="admin-panel" class="hidden bg-slate-950 text-white p-3 sm:p-4 border-b-4 border-yellow-400 space-y-3.5 shadow-2xl">
+      <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-2.5">
+        <div>
+          <h2 class="text-sm sm:text-base font-black text-yellow-400 flex items-center gap-1.5">
+            <span>👑 MASTER HOST CONTROL CENTER</span>
+          </h2>
+          <p class="text-[11px] text-slate-400">All-system control: Caller, Coupons, Khata, Prizes &amp; Theme</p>
+        </div>
+        <div class="flex items-center gap-1.5">
+          <button onclick="activatePlayerOnlyLock()" class="bg-amber-500 hover:bg-amber-400 text-slate-950 text-[11px] font-black px-2.5 py-1.5 rounded-lg shadow flex items-center gap-1">
+            <span>🔒 Lock (Player View)</span>
+          </button>
+          <button onclick="toggleAdminPanel(false)" class="bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold px-2.5 py-1.5 rounded-lg">
+            ✕
+          </button>
+        </div>
+      </div>
+
+      <div class="flex sm:grid sm:grid-cols-5 gap-1.5 overflow-x-auto no-scrollbar bg-slate-900 p-1 rounded-xl border border-slate-800 text-[11px] font-extrabold">
+        <button id="admin-tab-caller" onclick="switchAdminTab('caller')" class="py-2 px-2.5 rounded-lg bg-yellow-400 text-slate-950 whitespace-nowrap shrink-0">
+          🎲 Game &amp; Caller
+        </button>
+        <button id="admin-tab-booking" onclick="switchAdminTab('booking')" class="py-2 px-2.5 rounded-lg text-slate-300 hover:text-white whitespace-nowrap shrink-0">
+          🎟️ Coupons &amp; Book
+        </button>
+        <button id="admin-tab-players" onclick="switchAdminTab('players')" class="py-2 px-2.5 rounded-lg text-slate-300 hover:text-white whitespace-nowrap shrink-0">
+          👥 Players &amp; Khata
+        </button>
+        <button id="admin-tab-prizes" onclick="switchAdminTab('prizes')" class="py-2 px-2.5 rounded-lg text-slate-300 hover:text-white whitespace-nowrap shrink-0">
+          🏆 Prizes &amp; Winners
+        </button>
+        <button id="admin-tab-settings" onclick="switchAdminTab('settings')" class="py-2 px-2.5 rounded-lg text-slate-300 hover:text-white whitespace-nowrap shrink-0">
+          🎨 Theme &amp; Brand
+        </button>
+      </div>
+
+      <!-- TAB 1: CALLER -->
+      <div id="admin-view-caller" class="space-y-3">
+        <div class="bg-slate-900 p-3 rounded-xl border border-slate-800 flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <div class="text-xs font-extrabold text-cyan-300">Arena Display Mode</div>
+            <div class="text-[11px] text-slate-400">Booking Sheet vs Live Auto-Daubing Arena</div>
+          </div>
+          <div class="flex rounded-lg overflow-hidden border border-slate-700 text-xs font-extrabold">
+            <button id="mode-btn-booking" onclick="setGameMode('booking')" class="px-3 py-1.5 bg-cyan-400 text-slate-950">
+              📋 Booking Mode
+            </button>
+            <button id="mode-btn-live" onclick="setGameMode('live')" class="px-3 py-1.5 bg-slate-800 text-slate-300">
+              🔴 Live Game
+            </button>
+          </div>
+        </div>
+
+        <div class="bg-slate-900 p-3 rounded-xl border border-slate-800 space-y-2.5">
+          <div class="flex items-center justify-between text-xs">
+            <span class="font-bold text-slate-300">Called: <strong id="admin-called-count" class="text-yellow-400">0 / 90</strong></span>
+            <span id="admin-last-lingo" class="text-[11px] text-amber-300 font-semibold truncate max-w-[210px]">Ready to Start</span>
+          </div>
+
+          <div class="grid grid-cols-4 gap-2">
+            <button onclick="callNextRandomNumber()" class="col-span-3 py-3 rounded-xl bg-gradient-to-r from-amber-400 to-yellow-500 hover:from-amber-300 hover:to-yellow-400 text-slate-950 font-black text-sm sm:text-base shadow-lg active:scale-[0.99] transition">
+              🎲 CALL NEXT NUMBER
+            </button>
+            <button onclick="undoLastCalledNumber()" title="Undo Last Number" class="col-span-1 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-amber-300 font-black text-xs flex flex-col items-center justify-center">
+              <span>↩️</span>
+              <span>Undo</span>
+            </button>
+          </div>
+
+          <div class="space-y-1.5 pt-1">
+            <div class="grid grid-cols-3 gap-2 text-xs font-bold">
+              <button id="btn-auto-call" onclick="toggleAutoCall()" class="py-2 px-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-white border border-slate-700">
+                ⏱️ Auto: OFF
+              </button>
+              <select id="auto-speed-select" onchange="updateAutoSpeed()" class="py-2 px-2 rounded-lg bg-slate-800 text-white border border-slate-700 text-center">
+                <option value="3000">Every 3s</option>
+                <option value="5000" selected>Every 5s</option>
+                <option value="8000">Every 8s</option>
+                <option value="10000">Every 10s</option>
+              </select>
+              <button onclick="reannounceLastNumber()" class="py-2 px-2 rounded-lg bg-indigo-700 hover:bg-indigo-600 text-white border border-indigo-500">
+                🔁 Repeat
+              </button>
+            </div>
+            <div id="auto-countdown-wrap" class="hidden w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
+              <div id="auto-countdown-bar" class="h-full bg-yellow-400 transition-all duration-100" style="width: 100%;"></div>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-3 gap-1.5 pt-1 text-[11px] font-extrabold">
+            <button id="btn-voice-toggle" onclick="toggleVoice()" class="py-2 px-2 rounded-lg bg-emerald-700 text-white border border-emerald-500">
+              🔊 Voice ON
+            </button>
+            <button id="btn-lingo-toggle" onclick="toggleLingoMode()" class="py-2 px-2 rounded-lg bg-cyan-800 text-cyan-100 border border-cyan-600">
+              🗣️ Lingo ON
+            </button>
+            <button id="btn-sfx-toggle" onclick="toggleSfxMode()" class="py-2 px-2 rounded-lg bg-emerald-700 text-white border border-emerald-500">
+              🔔 Chime ON
+            </button>
+          </div>
+
+          <div class="flex items-center justify-between pt-2 border-t border-slate-800 text-[11px]">
+            <button onclick="openResetModal('board')" class="text-amber-400 hover:text-amber-300 font-extrabold underline">
+              🔄 Reset Board Numbers Only
+            </button>
+            <button onclick="openResetModal('factory')" class="text-rose-400 hover:text-rose-300 font-extrabold underline">
+              ⚠️ Full Factory Reset
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 2: BOOKING -->
+      <div id="admin-view-booking" class="hidden space-y-3">
+        <div class="bg-slate-900 p-3 rounded-xl border border-slate-800 space-y-2.5">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-extrabold text-cyan-300">Inventory &amp; Revenue Khata</span>
+            <span id="khata-revenue-badge" class="text-[11px] font-black bg-emerald-950 text-emerald-300 border border-emerald-700 px-2 py-0.5 rounded-full">
+              Collected: ₹0
+            </span>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2 text-xs">
+            <div>
+              <label class="block text-[10px] font-bold text-slate-400 mb-1">Total Coupons in Game</label>
+              <div class="flex gap-1">
+                <select id="booking-total-tickets" onchange="applyCouponInventoryConfig()" class="w-full px-2 py-1.5 rounded-lg bg-slate-950 border border-slate-700 text-white font-bold">
+                  <option value="30">30 Coupons</option>
+                  <option value="60" selected>60 Coupons</option>
+                  <option value="100">100 Coupons</option>
+                  <option value="150">150 Coupons</option>
+                  <option value="200">200 Coupons</option>
+                  <option value="300">300 Coupons</option>
+                  <option value="500">500 Coupons</option>
+                </select>
+              </div>
+            </div>
+            <div>
+              <label class="block text-[10px] font-bold text-slate-400 mb-1">Price Per Ticket (₹)</label>
+              <input id="booking-ticket-price" type="number" min="0" step="10" value="50" onchange="applyCouponInventoryConfig()"
+                class="w-full px-2.5 py-1.5 rounded-lg bg-slate-950 border border-slate-700 text-white font-black" />
+            </div>
+          </div>
+
+          <div class="grid grid-cols-3 gap-1.5 text-center text-[11px] bg-slate-950 p-2 rounded-lg border border-slate-800">
+            <div>
+              <div class="text-slate-400">Sold / Total</div>
+              <div id="stat-sold-count" class="font-black text-white">0 / 60</div>
+            </div>
+            <div>
+              <div class="text-slate-400">Paid ✅</div>
+              <div id="stat-paid-amount" class="font-black text-emerald-400">₹0</div>
+            </div>
+            <div>
+              <div class="text-slate-400">Pending ⏳</div>
+              <div id="stat-pending-amount" class="font-black text-amber-400">₹0</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-slate-900 p-3 rounded-xl border border-slate-800 space-y-2.5">
+          <div class="text-xs font-extrabold text-yellow-400">Assign Coupons to Friend</div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <div>
+              <label class="block text-[10px] font-bold text-slate-300 mb-1">Friend / Player Name</label>
+              <input id="book-buyer-name" type="text" placeholder="e.g. Reema Medak" maxlength="26"
+                class="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-white text-xs font-bold focus:outline-none focus:border-yellow-400" />
+            </div>
+            <div>
+              <label class="block text-[10px] font-bold text-slate-300 mb-1">Coupon No(s) (e.g. 1-6 or 12,15)</label>
+              <input id="book-coupon-range" type="text" placeholder="e.g. 001-006 or 12, 15"
+                class="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-white text-xs font-bold focus:outline-none focus:border-yellow-400" />
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block text-[10px] font-bold text-slate-300 mb-1">WhatsApp Phone (Optional)</label>
+              <input id="book-buyer-phone" type="tel" placeholder="9876543210" maxlength="15"
+                class="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-white text-xs font-bold focus:outline-none focus:border-yellow-400" />
+            </div>
+            <div>
+              <label class="block text-[10px] font-bold text-slate-300 mb-1">Payment Status</label>
+              <select id="book-payment-status" class="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-700 text-white text-xs font-bold">
+                <option value="paid">Paid ✅</option>
+                <option value="pending">Pending ⏳</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2 pt-1">
+            <button onclick="bookCouponsForFriend(false)" class="py-2.5 rounded-lg bg-[#aeea00] hover:bg-lime-300 text-black font-black text-xs shadow">
+              ✅ Assign Ticket
+            </button>
+            <button onclick="bookCouponsForFriend(true)" class="py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs shadow">
+              📲 Assign &amp; WhatsApp
+            </button>
+          </div>
+
+          <div class="grid grid-cols-3 gap-1.5 pt-2 border-t border-slate-800 text-[10px] font-extrabold">
+            <button onclick="markAllPendingAsPaid()" class="py-1.5 px-2 rounded bg-emerald-950 hover:bg-emerald-900 text-emerald-300 border border-emerald-800">
+              ✅ Mark All Paid
+            </button>
+            <button onclick="regenerateAllTicketsPreGame()" class="py-1.5 px-2 rounded bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-slate-700">
+              🔀 Shuffle Grids
+            </button>
+            <button onclick="clearAllBookingsBulk()" class="py-1.5 px-2 rounded bg-rose-950 hover:bg-rose-900 text-rose-300 border border-rose-800">
+              🗑️ Clear Bookings
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 3: PLAYERS -->
+      <div id="admin-view-players" class="hidden space-y-3">
+        <div class="bg-slate-900 p-3 rounded-xl border border-slate-800 space-y-2.5">
+          <div class="flex items-center justify-between gap-2">
+            <div>
+              <div class="text-xs font-extrabold text-yellow-400">👥 PLAYERS &amp; KHATA MANAGER</div>
+              <div id="players-dir-summary" class="text-[11px] text-slate-400">0 Players • 0 Sold Coupons</div>
+            </div>
+            <input id="players-dir-search" oninput="renderPlayersDirectory()" type="text" placeholder="Search name / #..."
+              class="px-2.5 py-1.5 rounded-lg bg-slate-950 border border-slate-700 text-xs text-white w-36 focus:outline-none focus:border-yellow-400" />
+          </div>
+
+          <div id="players-directory-list" class="max-h-72 overflow-y-auto space-y-2 pr-1 text-xs"></div>
+        </div>
+      </div>
+
+      <!-- TAB 4: PRIZES -->
+      <div id="admin-view-prizes" class="hidden space-y-3">
+        <div class="bg-slate-900 p-3 rounded-xl border border-slate-800 space-y-2.5">
+          <div class="flex items-center justify-between gap-2">
+            <div>
+              <div class="text-xs font-extrabold text-yellow-400">🏆 DIVIDENDS &amp; PRIZE POOL</div>
+              <div id="total-prize-pool-text" class="text-[11px] text-emerald-400 font-bold">Total Prize Pool: ₹0</div>
+            </div>
+            <button id="btn-auto-claim-toggle" onclick="toggleAutoClaim()" class="px-2.5 py-1 rounded-lg bg-emerald-600 text-white text-[11px] font-black">
+              🤖 Auto-Verify: ON
+            </button>
+          </div>
+
+          <div id="prizes-config-list" class="max-h-48 overflow-y-auto space-y-1.5 pr-1 text-xs"></div>
+
+          <div class="pt-2 border-t border-slate-800 space-y-2">
+            <div class="text-[11px] font-extrabold text-cyan-300">Manual Winner Award / Override</div>
+            <div class="grid grid-cols-3 gap-1.5 text-xs">
+              <select id="manual-winner-prize" class="col-span-2 px-2 py-1.5 rounded-lg bg-slate-950 border border-slate-700 text-white font-bold"></select>
+              <input id="manual-winner-coupon" type="number" min="1" placeholder="Coupon #"
+                class="col-span-1 px-2 py-1.5 rounded-lg bg-slate-950 border border-slate-700 text-white font-black text-center" />
+            </div>
+            <div class="grid grid-cols-2 gap-2 text-xs font-black">
+              <button onclick="awardManualWinner()" class="py-2 rounded-lg bg-yellow-400 hover:bg-yellow-300 text-slate-950">
+                🏅 Award Winner
+              </button>
+              <button onclick="shareWinnersWhatsApp()" class="py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white">
+                📲 Share Winners List
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 5: SETTINGS & THEME (With Host PIN Change System) -->
+      <div id="admin-view-settings" class="hidden space-y-3">
+        <div class="bg-slate-900 p-3 rounded-xl border border-slate-800 space-y-2.5 text-xs max-h-80 overflow-y-auto pr-1">
+          <div>
+            <label class="block text-[11px] font-extrabold text-yellow-400 mb-1.5">Arena Color Theme Preset</label>
+            <div class="grid grid-cols-2 gap-1.5 text-[11px] font-black">
+              <button type="button" onclick="applyThemePreset('trimurti')" class="p-2 rounded-lg bg-cyan-400 text-slate-950 border-2 border-red-600 text-left">
+                🔴 Classic Trimurti
+              </button>
+              <button type="button" onclick="applyThemePreset('royal')" class="p-2 rounded-lg bg-amber-400 text-red-950 border-2 border-red-900 text-left">
+                👑 Royal Gold &amp; Maroon
+              </button>
+              <button type="button" onclick="applyThemePreset('ipl')" class="p-2 rounded-lg bg-indigo-600 text-white border-2 border-cyan-400 text-left">
+                ⚡ Neon IPL Night
+              </button>
+              <button type="button" onclick="applyThemePreset('emerald')" class="p-2 rounded-lg bg-emerald-400 text-emerald-950 border-2 border-emerald-800 text-left">
+                💚 Emerald Club
+              </button>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <div>
+              <label class="block text-[10px] font-bold text-slate-300 mb-1">Club / Tambola Title</label>
+              <input id="setting-club-name" type="text" value="TRIMURTI TAMBOLA" maxlength="32"
+                class="w-full px-2.5 py-1.5 rounded-lg bg-slate-950 border border-slate-700 text-white font-bold" />
+            </div>
+            <div>
+              <label class="block text-[10px] font-bold text-slate-300 mb-1">Subtitle / Tagline (Optional)</label>
+              <input id="setting-tagline" type="text" placeholder="e.g. Sunday Mega Housie" maxlength="42"
+                class="w-full px-2.5 py-1.5 rounded-lg bg-slate-950 border border-slate-700 text-white font-bold" />
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block text-[10px] font-bold text-slate-300 mb-1">Game Date &amp; Time</label>
+              <input id="setting-event-date" type="text" value="10 Nov 2026 at 8:30 PM" maxlength="32"
+                class="w-full px-2.5 py-1.5 rounded-lg bg-slate-950 border border-slate-700 text-white font-bold" />
+            </div>
+            <div>
+              <label class="block text-[10px] font-bold text-slate-300 mb-1">Host Phone (Call to Buy)</label>
+              <input id="setting-host-phone" type="tel" value="+919876543210" maxlength="16"
+                class="w-full px-2.5 py-1.5 rounded-lg bg-slate-950 border border-slate-700 text-white font-bold" />
+            </div>
+          </div>
+
+          <!-- Host PIN Change System Fields -->
+          <div class="grid grid-cols-2 gap-2 bg-slate-950 p-2 rounded-xl border border-amber-500/40">
+            <div>
+              <label class="block text-[10px] font-bold text-amber-300 mb-1">🔒 Change Host PIN (4-digit)</label>
+              <input id="setting-host-pin" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="4" value="1234"
+                class="w-full px-2.5 py-1.5 rounded-lg bg-slate-900 border border-amber-500 text-yellow-300 font-mono font-black tracking-widest text-center" />
+            </div>
+            <div>
+              <label class="block text-[10px] font-bold text-slate-300 mb-1">Call-to-Buy Strip</label>
+              <select id="setting-show-call-bar" class="w-full px-2.5 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-white font-bold">
+                <option value="show">Show Call Strip</option>
+                <option value="hide">Hide Call Strip</option>
+              </select>
+            </div>
+          </div>
+
+          <button onclick="saveGameSettings()" class="w-full py-2.5 rounded-lg bg-cyan-400 hover:bg-cyan-300 text-slate-950 font-black text-xs">
+            💾 Save All Branding &amp; PIN Settings
+          </button>
+
+          <div class="pt-2 border-t border-slate-800 space-y-1.5">
+            <div class="text-[10px] font-extrabold text-slate-400 uppercase">Backup &amp; Restore Game Data</div>
+            <div class="grid grid-cols-2 gap-2">
+              <button type="button" onclick="exportBackupJson()" class="py-1.5 px-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-emerald-300 font-bold border border-slate-700">
+                📤 Copy Backup JSON
+              </button>
+              <button type="button" onclick="openRestoreModal()" class="py-1.5 px-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-amber-300 font-bold border border-slate-700">
+                📥 Restore Backup
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- MAIN ARENA -->
+    <main class="flex-1 px-2 py-2.5 space-y-3">
+      <section aria-label="1 to 90 Tambola Board">
+        <div id="master-board-grid" class="grid grid-cols-10 border-2 border-black/30 shadow-md" style="background-color: var(--board-cell-bg);"></div>
+      </section>
+
+      <section class="space-y-2.5">
+        <div class="py-2.5 px-3 rounded-md shadow-md border border-yellow-300 text-center" style="background-color: var(--accent-bar-bg);">
+          <h2 class="text-lg sm:text-xl font-black text-black tracking-wide uppercase">
+            DECLARED NUMBER
+          </h2>
+          <p id="live-lingo-subtitle" class="text-xs font-extrabold text-red-900 mt-0.5">
+            Waiting for first number...
+          </p>
+        </div>
+
+        <div id="declared-circles-container" class="flex flex-wrap items-center justify-center gap-2 px-1 py-1 min-h-[46px]">
+          <span class="text-xs font-bold text-yellow-200 bg-black/40 px-3.5 py-1.5 rounded-full">
+            No numbers declared yet — Book your coupon below!
+          </span>
+        </div>
+      </section>
+
+      <section id="winners-banner" class="hidden bg-yellow-300 border-2 border-white rounded-lg p-2.5 shadow-md">
+        <div class="flex items-center justify-between mb-1">
+          <span class="text-xs font-black text-red-900 uppercase tracking-wider">🏆 DECLARED WINNERS</span>
+          <span id="winners-pool-pill" class="text-[10px] font-black bg-red-800 text-white px-2 py-0.5 rounded-full"></span>
+        </div>
+        <div id="winners-list" class="flex flex-wrap gap-1.5 text-xs font-extrabold"></div>
+      </section>
+
+      <section class="pt-1 pb-2 space-y-2.5">
+        <h3 class="text-center text-base sm:text-lg font-black text-black bg-white/85 py-1 rounded-md tracking-wide uppercase shadow-2xs">
+          SELECT YOUR COUPON NUMBER
+        </h3>
+
+        <div class="flex items-center justify-center gap-2 px-1">
+          <button type="button" onclick="keypadDelete()" class="keypad-action-btn px-3.5 py-2 rounded-md font-black text-sm sm:text-base uppercase cursor-pointer">
+            DEL
+          </button>
+          <input
+            id="coupon-search-input"
+            type="text"
+            inputmode="numeric"
+            placeholder="All Coupons"
+            oninput="handleCouponInputChange()"
+            class="flex-1 max-w-[230px] bg-white text-black text-center font-black text-lg sm:text-xl py-1.5 px-3 rounded border-2 border-slate-700 focus:outline-none"
+          />
+          <button type="button" onclick="keypadConfirm()" class="keypad-action-btn px-4 py-2 rounded-md font-black text-sm sm:text-base uppercase cursor-pointer">
+            OK
+          </button>
+        </div>
+
+        <div class="grid grid-cols-10 gap-1 sm:gap-1.5 px-0.5">
+          <button type="button" onclick="keypadPress('0')" class="keypad-num-btn py-2 rounded font-black text-sm sm:text-base cursor-pointer">0</button>
+          <button type="button" onclick="keypadPress('1')" class="keypad-num-btn py-2 rounded font-black text-sm sm:text-base cursor-pointer">1</button>
+          <button type="button" onclick="keypadPress('2')" class="keypad-num-btn py-2 rounded font-black text-sm sm:text-base cursor-pointer">2</button>
+          <button type="button" onclick="keypadPress('3')" class="keypad-num-btn py-2 rounded font-black text-sm sm:text-base cursor-pointer">3</button>
+          <button type="button" onclick="keypadPress('4')" class="keypad-num-btn py-2 rounded font-black text-sm sm:text-base cursor-pointer">4</button>
+          <button type="button" onclick="keypadPress('5')" class="keypad-num-btn py-2 rounded font-black text-sm sm:text-base cursor-pointer">5</button>
+          <button type="button" onclick="keypadPress('6')" class="keypad-num-btn py-2 rounded font-black text-sm sm:text-base cursor-pointer">6</button>
+          <button type="button" onclick="keypadPress('7')" class="keypad-num-btn py-2 rounded font-black text-sm sm:text-base cursor-pointer">7</button>
+          <button type="button" onclick="keypadPress('8')" class="keypad-num-btn py-2 rounded font-black text-sm sm:text-base cursor-pointer">8</button>
+          <button type="button" onclick="keypadPress('9')" class="keypad-num-btn py-2 rounded font-black text-sm sm:text-base cursor-pointer">9</button>
+        </div>
+
+        <div id="filter-status-bar" class="hidden flex items-center justify-between bg-black/80 text-white px-3 py-1.5 rounded-lg text-xs font-bold">
+          <span id="filter-status-text">Showing Coupon #001</span>
+          <button onclick="clearCouponFilter()" class="bg-yellow-400 text-black px-2.5 py-0.5 rounded font-black">
+            Show All Coupons
+          </button>
+        </div>
+      </section>
+
+      <section id="tickets-stream-container" class="space-y-3 pb-8"></section>
+    </main>
+  </div>
+
+  <!-- MODALS -->
+  <!-- Host PIN Unlock Modal (Mandatory when Host Locked) -->
+  <div id="pin-unlock-modal" class="fixed inset-0 bg-black/85 z-50 hidden items-center justify-center p-4">
+    <div class="bg-slate-900 border-2 border-yellow-400 rounded-2xl max-w-xs w-full p-5 text-white shadow-2xl animate-pop text-center space-y-3">
+      <div class="w-12 h-12 rounded-full bg-yellow-400/20 border border-yellow-400 text-yellow-400 flex items-center justify-center mx-auto text-xl">
+        🔒
+      </div>
+      <div>
+        <h3 class="text-base font-black text-yellow-400">HOST PIN REQUIRED</h3>
+        <p class="text-[11px] text-slate-400 mt-0.5">Enter 4-digit Host PIN to access editing</p>
+      </div>
+      <input id="pin-unlock-input" type="password" inputmode="numeric" maxlength="4" placeholder="••••"
+        onkeydown="if(event.key==='Enter') submitHostPinUnlock()"
+        class="w-36 mx-auto block px-3 py-2.5 rounded-xl bg-slate-950 border-2 border-slate-700 focus:border-yellow-400 text-center text-2xl font-mono font-black tracking-[0.4em] text-yellow-300 focus:outline-none" />
+      <p id="pin-error-msg" class="hidden text-[11px] font-bold text-rose-400">Incorrect PIN! Try again.</p>
+      <div class="grid grid-cols-2 gap-2 pt-1 text-xs font-black">
+        <button onclick="closePinUnlockModal()" class="py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300">
+          Cancel
+        </button>
+        <button onclick="submitHostPinUnlock()" class="py-2.5 rounded-xl bg-yellow-400 hover:bg-yellow-300 text-slate-950">
+          🔓 Verify
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div id="reset-modal" class="fixed inset-0 bg-black/75 z-50 hidden items-center justify-center p-4">
+    <div class="bg-slate-900 border-2 border-yellow-400 rounded-2xl max-w-sm w-full p-5 text-white shadow-2xl animate-pop">
+      <h3 id="reset-modal-title" class="text-lg font-black text-yellow-400">Reset Called Numbers?</h3>
+      <p id="reset-modal-desc" class="text-xs text-slate-300 mt-1.5">This will clear declared numbers.</p>
+      <div class="mt-4 flex justify-end gap-2 text-xs font-bold">
+        <button onclick="closeResetModal()" class="px-4 py-2 rounded-lg bg-slate-700 hover:bg-slate-600">Cancel</button>
+        <button onclick="confirmResetAction()" class="px-4 py-2 rounded-lg bg-rose-600 hover:bg-rose-500 text-white">Yes, Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Player Edit Modal -->
+  <div id="player-edit-modal" class="fixed inset-0 bg-black/80 z-50 hidden items-center justify-center p-3 sm:p-4">
+    <div class="bg-slate-900 border-2 border-yellow-400 rounded-2xl max-w-md w-full p-4 sm:p-5 text-white shadow-2xl animate-pop space-y-3.5 max-h-[92vh] overflow-y-auto">
+      <div class="flex items-center justify-between border-b border-slate-700 pb-2.5">
+        <div>
+          <h3 id="edit-modal-title" class="text-base sm:text-lg font-black text-yellow-400 flex items-center gap-1.5">
+            ✏️ Edit Coupon #001
+          </h3>
+          <p id="edit-modal-subtitle" class="text-[11px] text-slate-400">Assign player name, phone &amp; payment status</p>
+        </div>
+        <button type="button" onclick="closePlayerEditModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-2.5 py-1 rounded-lg text-xs font-bold">✕</button>
+      </div>
+
+      <div class="bg-slate-800/90 p-2.5 rounded-xl border border-slate-700 space-y-2">
+        <div class="text-[11px] font-extrabold text-cyan-300">Apply Changes To:</div>
+        <div class="grid grid-cols-3 gap-1.5 text-[11px] font-extrabold">
+          <button type="button" id="scope-btn-single" onclick="setEditScope('single')" class="py-1.5 px-2 rounded-lg bg-yellow-400 text-slate-950">This Coupon</button>
+          <button type="button" id="scope-btn-range" onclick="setEditScope('range')" class="py-1.5 px-2 rounded-lg bg-slate-700 text-slate-300">Coupon Range</button>
+          <button type="button" id="scope-btn-all-player" onclick="setEditScope('all-player')" class="py-1.5 px-2 rounded-lg bg-slate-700 text-slate-300 hidden">All of Player</button>
+        </div>
+
+        <div id="edit-range-box" class="hidden pt-1 flex items-center gap-2 text-xs">
+          <span class="text-slate-400 font-bold">From</span>
+          <input id="edit-range-start" type="number" min="1" class="w-20 px-2 py-1.5 rounded bg-slate-900 border border-slate-600 text-white font-black text-center" />
+          <span class="text-slate-400 font-bold">To</span>
+          <input id="edit-range-end" type="number" min="1" class="w-20 px-2 py-1.5 rounded bg-slate-900 border border-slate-600 text-white font-black text-center" />
+        </div>
+      </div>
+
+      <div class="space-y-1.5">
+        <label class="block text-xs font-extrabold text-slate-200">Player Name</label>
+        <input id="edit-player-name" type="text" placeholder="Enter friend / player name..." maxlength="26"
+          class="w-full px-3 py-2.5 rounded-xl bg-slate-800 border border-slate-600 text-white font-bold text-sm focus:outline-none focus:border-yellow-400" />
+        <div id="edit-quick-players" class="flex flex-wrap gap-1.5 pt-1"></div>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+        <div>
+          <label class="block text-xs font-extrabold text-slate-200 mb-1">WhatsApp / Phone (Optional)</label>
+          <input id="edit-player-phone" type="tel" placeholder="e.g. 9876543210" maxlength="16"
+            class="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-600 text-white font-bold text-xs focus:outline-none focus:border-yellow-400" />
+        </div>
+        <div>
+          <label class="block text-xs font-extrabold text-slate-200 mb-1">Payment Status</label>
+          <div class="grid grid-cols-2 gap-1.5 bg-slate-800 p-1 rounded-xl border border-slate-600 text-xs font-black">
+            <button type="button" id="pay-btn-paid" onclick="setEditPaymentStatus('paid')" class="py-1.5 rounded-lg bg-emerald-500 text-slate-950">Paid ✅</button>
+            <button type="button" id="pay-btn-pending" onclick="setEditPaymentStatus('pending')" class="py-1.5 rounded-lg text-slate-300">Pending ⏳</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="pt-2 space-y-2 border-t border-slate-800">
+        <button type="button" onclick="savePlayerEditModal()" class="w-full py-2.5 rounded-xl bg-[#aeea00] hover:bg-lime-300 text-black font-black text-sm shadow-lg">💾 Save Changes</button>
+        <div class="grid grid-cols-2 gap-2 text-xs font-extrabold">
+          <button type="button" onclick="clearPlayerFromModal()" class="py-2 rounded-xl bg-rose-600/90 hover:bg-rose-600 text-white">🗑️ Clear / Unassign</button>
+          <button type="button" onclick="shareEditedPlayerWhatsApp()" class="py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white">📲 Share WhatsApp</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Player Ticket Info Modal -->
+  <div id="player-ticket-info-modal" class="fixed inset-0 bg-black/80 z-50 hidden items-center justify-center p-4">
+    <div class="bg-slate-900 border-2 border-cyan-400 rounded-2xl max-w-sm w-full p-4 text-white shadow-2xl animate-pop space-y-3">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+        <h3 id="pt-info-title" class="text-base font-black text-cyan-300">🎫 Coupon #001 Details</h3>
+        <button onclick="closePlayerTicketInfoModal()" class="bg-slate-800 px-2.5 py-1 rounded-lg text-xs font-bold">✕</button>
+      </div>
+      <div id="pt-info-body" class="text-xs space-y-2 text-slate-200"></div>
+      <div id="pt-info-footer" class="pt-1 flex gap-2">
+        <button onclick="requestEditFromPlayerModal()" class="flex-1 py-2 rounded-xl bg-yellow-400 text-slate-950 font-black text-xs">✏️ Edit (Host PIN)</button>
+        <button onclick="closePlayerTicketInfoModal()" class="py-2 px-4 rounded-xl bg-slate-700 text-white font-bold text-xs">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="restore-modal" class="fixed inset-0 bg-black/80 z-50 hidden items-center justify-center p-4">
+    <div class="bg-slate-900 border-2 border-amber-400 rounded-2xl max-w-md w-full p-4 text-white shadow-2xl animate-pop space-y-3">
+      <div class="flex items-center justify-between">
+        <h3 class="text-sm font-black text-amber-400">📥 Paste Backup JSON</h3>
+        <button onclick="closeRestoreModal()" class="bg-slate-800 px-2 py-1 rounded text-xs">✕</button>
+      </div>
+      <textarea id="restore-json-textarea" rows="5" placeholder='Paste exported JSON backup string here...'
+        class="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-700 text-[11px] font-mono text-emerald-300 focus:outline-none"></textarea>
+      <button onclick="applyRestoreBackupJson()" class="w-full py-2.5 rounded-xl bg-amber-400 text-slate-950 font-black text-xs">✅ Restore Game &amp; Bookings</button>
+    </div>
+  </div>
+
+  <div id="toast-banner" class="fixed bottom-4 left-1/2 -translate-x-1/2 bg-slate-950 text-yellow-300 border border-yellow-400 text-xs font-extrabold px-4 py-2 rounded-full shadow-xl z-50 opacity-0 pointer-events-none transition-opacity duration-200">
+    Message
+  </div>
+
+  <!-- APPLICATION JAVASCRIPT -->
+  <script type="module">
+    const STORAGE_KEY = "trimurti_tambola_master_state_v4";
+    const channel = ('BroadcastChannel' in window) ? new BroadcastChannel('trimurti_tambola_sync_channel') : null;
+
+    const TAMBOLA_LINGO = {
+      1: "Kelly's eye, Number 1", 2: "One little duck, Number 2", 3: "Cup of tea, Number 3",
+      4: "Knock at the door, Number 4", 5: "Man alive, Number 5", 6: "Tom Mix, Number 6",
+      7: "Lucky seven, Number 7", 8: "Garden gate, Number 8", 9: "Doctor's orders, Number 9",
+      10: "Prime Minister's den, Number 10", 11: "Two beautiful legs, Eleven", 12: "One dozen, Twelve",
+      13: "Unlucky for some, Thirteen", 14: "Valentine's Day, Fourteen", 15: "Young and keen, Fifteen",
+      16: "Sweet sixteen, Sixteen", 17: "Dancing queen, Seventeen", 18: "Coming of age, Eighteen",
+      19: "Goodbye teens, Nineteen", 20: "One score, Twenty", 21: "Royal salute, Twenty one",
+      22: "Two little ducks, Twenty two", 23: "Thee and me, Twenty three", 24: "Two dozen, Twenty four",
+      25: "Duck and dive, Twenty five", 26: "Republic Day, Twenty six", 27: "Gateway to heaven, Twenty seven",
+      28: "In a state, Twenty eight", 29: "Rise and shine, Twenty nine", 30: "Dirty Gertie, Thirty",
+      31: "Get up and run, Thirty one", 32: "Buckle my shoe, Thirty two", 33: "All the threes, Thirty three",
+      34: "Ask for more, Thirty four", 35: "Jump and jive, Thirty five", 36: "Three dozen, Thirty six",
+      37: "More than eleven, Thirty seven", 38: "Christmas cake, Thirty eight", 39: "Steps, Thirty nine",
+      40: "Naughty forty, Forty", 41: "Time for fun, Forty one", 42: "Winnie the Pooh, Forty two",
+      43: "Down on your knees, Forty three", 44: "Droopy drawers, Forty four", 45: "Halfway there, Forty five",
+      46: "Up to tricks, Forty six", 47: "Independence Day, Forty seven", 48: "Four dozen, Forty eight",
+      49: "PC, Forty nine", 50: "Half a century, Fifty", 51: "Tweak of the thumb, Fifty one",
+      52: "Danny La Rue, Fifty two", 53: "Stuck in the tree, Fifty three", 54: "Clean the floor, Fifty four",
+      55: "Snakes alive, Fifty five", 56: "Was she worth it, Fifty six", 57: "Heinz varieties, Fifty seven",
+      58: "Make them wait, Fifty eight", 59: "Brighton line, Fifty nine", 60: "Five dozen, Sixty",
+      61: "Bakers bun, Sixty one", 62: "Turn the screw, Sixty two", 63: "Tickle me, Sixty three",
+      64: "Red raw, Sixty four", 65: "Old age pension, Sixty five", 66: "Clickety click, Sixty six",
+      67: "Made in heaven, Sixty seven", 68: "Saving grace, Sixty eight", 69: "Either way up, Sixty nine",
+      70: "Three score and ten, Seventy", 71: "Bang on the drum, Seventy one", 72: "Six dozen, Seventy two",
+      73: "Queen bee, Seventy three", 74: "Candy store, Seventy four", 75: "Diamond jubilee, Seventy five",
+      76: "Trombones, Seventy six", 77: "Sunset strip, Seventy seven", 78: "Heaven's gate, Seventy eight",
+      79: "One more time, Seventy nine", 80: "Eight and blank, Eighty", 81: "Stop and run, Eighty one",
+      82: "Straight on through, Eighty two", 83: "Time for tea, Eighty three", 84: "Seven dozen, Eighty four",
+      85: "Staying alive, Eighty five", 86: "Between the sticks, Eighty six", 87: "Torquay in Devon, Eighty seven",
+      88: "Two fat ladies, Eighty eight", 89: "Nearly there, Eighty nine", 90: "Top of the shop, Ninety!"
+    };
+
+    const THEME_PRESETS = {
+      trimurti: { arenaBg: "#e60000", bannerBg: "#00ffff", bannerBorder: "#00cccc", bannerText: "#0b2528", subbannerBg: "#33ffff", stripBg: "#7f1d1d", boardCellBg: "#008000", boardCellBorder: "#38b000", accentBarBg: "#ffd700" },
+      royal: { arenaBg: "#7a0c18", bannerBg: "#ffd700", bannerBorder: "#d97706", bannerText: "#3b0710", subbannerBg: "#fde047", stripBg: "#450a0a", boardCellBg: "#14532d", boardCellBorder: "#22c55e", accentBarBg: "#facc15" },
+      ipl: { arenaBg: "#0f172a", bannerBg: "#38bdf8", bannerBorder: "#0284c7", bannerText: "#082f49", subbannerBg: "#7dd3fc", stripBg: "#1e1b4b", boardCellBg: "#1d4ed8", boardCellBorder: "#60a5fa", accentBarBg: "#facc15" },
+      emerald: { arenaBg: "#065f46", bannerBg: "#6ee7b7", bannerBorder: "#10b981", bannerText: "#022c22", subbannerBg: "#a7f3d0", stripBg: "#022c22", boardCellBg: "#047857", boardCellBorder: "#34d399", accentBarBg: "#fde047" }
+    };
+
+    const DEFAULT_PRIZES = [
+      { id: "jaldi5", label: "Jaldi 5", amount: 200, enabled: true },
+      { id: "top", label: "Top Line", amount: 250, enabled: true },
+      { id: "middle", label: "Middle Line", amount: 250, enabled: true },
+      { id: "bottom", label: "Bottom Line", amount: 250, enabled: true },
+      { id: "corners", label: "Four Corners", amount: 200, enabled: true },
+      { id: "fh1", label: "1st Full House", amount: 1000, enabled: true },
+      { id: "fh2", label: "2nd Full House", amount: 500, enabled: false },
+      { id: "fh3", label: "3rd Full House", amount: 300, enabled: false }
+    ];
+
+    let gameState = {
+      clubName: "TRIMURTI TAMBOLA",
+      tagline: "",
+      eventDate: "10 Nov 2026 at 8:30 PM",
+      hostPhone: "+919876543210",
+      hostPin: "1234",
+      isHostLocked: false,
+      showCallBar: true,
+      themeKey: "trimurti",
+      mode: "booking",
+      totalTickets: 60,
+      ticketPrice: 50,
+      autoClaimVerify: true,
+      prizes: JSON.parse(JSON.stringify(DEFAULT_PRIZES)),
+      manualWinners: [],
+      calledNumbers: [],
+      bookings: { "1": "Reema Medak", "2": "Reema Medak", "3": "Reema Medak", "4": "Reema Medak", "5": "Assak1234", "6": "Assak1234" },
+      playerMeta: {},
+      ticketsSerialized: ""
+    };
+
+    let ticketsList = [];
+    let filterCouponCode = "";
+    let voiceEnabled = true;
+    let lingoEnabled = true;
+    let sfxEnabled = true;
+    let autoCallInterval = null;
+    let autoCountdownTimer = null;
+    let autoSpeedMs = 5000;
+    let lastAnnouncedNumber = null;
+    let pendingResetType = "board";
+    let pendingActionAfterPin = null;
+
+    let activeEditState = {
+      ticketId: 1,
+      originalPlayer: "",
+      scope: "single",
+      paymentStatus: "paid"
+    };
+
+    let isRemoteUpdate = false;
+
+    async function initApp() {
+      startLiveClock();
+      const savedRaw = localStorage.getItem(STORAGE_KEY);
+      if (savedRaw) {
+        try {
+          const parsed = JSON.parse(savedRaw);
+          gameState = { ...gameState, ...parsed, prizes: Array.isArray(parsed.prizes) ? parsed.prizes : JSON.parse(JSON.stringify(DEFAULT_PRIZES)), manualWinners: Array.isArray(parsed.manualWinners) ? parsed.manualWinners : [], calledNumbers: Array.isArray(parsed.calledNumbers) ? parsed.calledNumbers : [], bookings: parsed.bookings || {}, playerMeta: parsed.playerMeta || {} };
+        } catch (e) {}
+      }
+
+      if (gameState.ticketsSerialized) {
+        try {
+          const grids = JSON.parse(gameState.ticketsSerialized);
+          ticketsList = grids.map((grid, idx) => ({ id: idx + 1, code: String(idx + 1).padStart(3, '0'), grid }));
+        } catch (e) {
+          ticketsList = buildTicketBatch(gameState.totalTickets);
+          gameState.ticketsSerialized = JSON.stringify(ticketsList.map(t => t.grid));
+        }
+      } else {
+        ticketsList = buildTicketBatch(gameState.totalTickets);
+        gameState.ticketsSerialized = JSON.stringify(ticketsList.map(t => t.grid));
+      }
+
+      syncInputsFromState();
+      renderAll();
+
+      if (channel) {
+        channel.onmessage = (event) => {
+          if (event.data && event.data.type === 'STATE_SYNC') {
+            isRemoteUpdate = true;
+            applyRemoteState(event.data.payload);
+            isRemoteUpdate = false;
+          }
+        };
+      }
+    }
+    window.initApp = initApp;
+
+    function syncInputsFromState() {
+      document.getElementById('setting-club-name').value = gameState.clubName;
+      document.getElementById('setting-tagline').value = gameState.tagline || "";
+      document.getElementById('setting-event-date').value = gameState.eventDate;
+      document.getElementById('setting-host-phone').value = gameState.hostPhone;
+      document.getElementById('setting-host-pin').value = gameState.hostPin || "1234";
+      document.getElementById('setting-show-call-bar').value = gameState.showCallBar !== false ? "show" : "hide";
+      document.getElementById('booking-total-tickets').value = String(gameState.totalTickets);
+      document.getElementById('booking-ticket-price').value = String(gameState.ticketPrice ?? 50);
+    }
+
+    function applyRemoteState(data) {
+      gameState = { ...gameState, ...data, prizes: Array.isArray(data.prizes) ? data.prizes : gameState.prizes, manualWinners: Array.isArray(data.manualWinners) ? data.manualWinners : [], calledNumbers: Array.isArray(data.calledNumbers) ? data.calledNumbers : [], bookings: data.bookings || {}, playerMeta: data.playerMeta || {} };
+      if (gameState.ticketsSerialized) {
+        try {
+          ticketsList = JSON.parse(gameState.ticketsSerialized).map((grid, idx) => ({ id: idx + 1, code: String(idx + 1).padStart(3, '0'), grid }));
+        } catch (e) {}
+      }
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(gameState));
+      syncInputsFromState();
+      renderAll();
+    }
+
+    function persistGameState() {
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(gameState)); } catch (e) {}
+      if (isRemoteUpdate) return;
+      if (channel) channel.postMessage({ type: 'STATE_SYNC', payload: gameState });
+    }
+
+    // PIN Verification & Security
+    window.handleHostButtonClick = function() {
+      if (gameState.isHostLocked) {
+        pendingActionAfterPin = 'openAdmin';
+        openPinUnlockModal();
+      } else {
+        toggleAdminPanel();
+      }
+    };
+
+    window.activatePlayerOnlyLock = function() {
+      stopAutoCall();
+      gameState.isHostLocked = true;
+      toggleAdminPanel(false);
+      renderAll();
+      persistGameState();
+      showToast("🔒 Player-Only Mode Active! Host PIN required to edit.");
+    };
+
+    window.openPinUnlockModal = function(actionCallback = null) {
+      if (typeof actionCallback === 'function') pendingActionAfterPin = actionCallback;
+      const modal = document.getElementById('pin-unlock-modal');
+      const input = document.getElementById('pin-unlock-input');
+      const err = document.getElementById('pin-error-msg');
+      input.value = "";
+      err.classList.add('hidden');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+      setTimeout(() => input.focus(), 60);
+    };
+
+    window.closePinUnlockModal = function() {
+      document.getElementById('pin-unlock-modal').classList.add('hidden');
+      document.getElementById('pin-unlock-modal').classList.remove('flex');
+      pendingActionAfterPin = null;
+    };
+
+    window.submitHostPinUnlock = function() {
+      const entered = document.getElementById('pin-unlock-input').value.trim();
+      const expected = String(gameState.hostPin || "1234");
+      if (entered === expected) {
+        gameState.isHostLocked = false;
+        closePinUnlockModal();
+        renderAll();
+        persistGameState();
+        showToast("🔓 Host PIN Verified Successfully!");
+
+        if (typeof pendingActionAfterPin === 'function') {
+          pendingActionAfterPin();
+        } else if (pendingActionAfterPin === 'openAdmin') {
+          toggleAdminPanel(true);
+        }
+        pendingActionAfterPin = null;
+      } else {
+        document.getElementById('pin-error-msg').classList.remove('hidden');
+        document.getElementById('pin-unlock-input').value = "";
+        document.getElementById('pin-unlock-input').focus();
+      }
+    };
+
+    window.toggleAdminPanel = function(forceState) {
+      if (gameState.isHostLocked) {
+        pendingActionAfterPin = 'openAdmin';
+        openPinUnlockModal();
+        return;
+      }
+      const panel = document.getElementById('admin-panel');
+      if (typeof forceState === 'boolean') panel.classList.toggle('hidden', !forceState);
+      else panel.classList.toggle('hidden');
+    };
+
+    // Tambola Ticket Generators
+    function buildTicketBatch(totalCount) {
+      const sheetsNeeded = Math.ceil(totalCount / 6);
+      const allGrids = [];
+      for (let s = 0; s < sheetsNeeded; s++) allGrids.push(...tryBuildSixTickets() || []);
+      return allGrids.slice(0, totalCount).map((grid, idx) => ({ id: idx + 1, code: String(idx + 1).padStart(3, '0'), grid }));
+    }
+
+    function tryBuildSixTickets() {
+      const pools = [];
+      for (let c = 0; c < 9; c++) {
+        const start = c === 0 ? 1 : c * 10, end = c === 8 ? 90 : c * 10 + 9;
+        const arr = []; for (let n = start; n <= end; n++) arr.push(n);
+        shuffle(arr); pools.push(arr);
+      }
+      const counts = Array.from({ length: 6 }, () => Array(9).fill(1));
+      const ticketTotals = Array(6).fill(9);
+      for (let c = 0; c < 9; c++) {
+        let rem = pools[c].length - 6, guard = 0;
+        while (rem > 0 && guard < 120) {
+          guard++;
+          const candidates = [];
+          for (let t = 0; t < 6; t++) { if (counts[t][c] < 3 && ticketTotals[t] < 15) candidates.push(t); }
+          if (!candidates.length) return null;
+          const chosen = candidates[Math.floor(Math.random() * candidates.length)];
+          counts[chosen][c]++; ticketTotals[chosen]++; rem--;
+        }
+        if (rem > 0) return null;
+      }
+      const tickets = [];
+      for (let t = 0; t < 6; t++) {
+        const grid = Array.from({ length: 3 }, () => Array(9).fill(null));
+        const rowCounts = [0, 0, 0];
+        const colOrder = [0, 1, 2, 3, 4, 5, 6, 7, 8].sort((a, b) => counts[t][b] - counts[t][a]);
+        for (const c of colOrder) {
+          const k = counts[t][c], nums = pools[c].splice(0, k).sort((a, b) => a - b);
+          if (k === 3) { for (let r = 0; r < 3; r++) { grid[r][c] = nums[r]; rowCounts[r]++; } }
+          else if (k === 2) {
+            const rows = [0, 1, 2].sort((a, b) => rowCounts[a] - rowCounts[b] || Math.random() - 0.5).slice(0, 2).sort((a, b) => a - b);
+            if (rowCounts[rows[0]] >= 5 || rowCounts[rows[1]] >= 5) return null;
+            grid[rows[0]][c] = nums[0]; grid[rows[1]][c] = nums[1]; rowCounts[rows[0]]++; rowCounts[rows[1]]++;
+          } else if (k === 1) {
+            const rows = [0, 1, 2].filter(r => rowCounts[r] < 5).sort((a, b) => rowCounts[a] - rowCounts[b] || Math.random() - 0.5);
+            if (!rows.length) return null;
+            grid[rows[0]][c] = nums[0]; rowCounts[rows[0]]++;
+          }
+        }
+        if (rowCounts[0] !== 5 || rowCounts[1] !== 5 || rowCounts[2] !== 5) return null;
+        tickets.push(grid);
+      }
+      return tickets;
+    }
+
+    function shuffle(arr) {
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    }
+
+    function applyCssThemeVariables() {
+      const preset = THEME_PRESETS[gameState.themeKey] || THEME_PRESETS.trimurti;
+      const root = document.documentElement.style;
+      Object.entries(preset).forEach(([k, v]) => {
+        const cssKey = '--' + k.replace(/[A-Z]/g, m => '-' + m.toLowerCase());
+        root.setProperty(cssKey, v);
+      });
+    }
+
+    function renderAll() {
+      applyCssThemeVariables();
+      document.getElementById('club-title-display').textContent = gameState.clubName;
+      const taglineEl = document.getElementById('club-tagline-display');
+      if (gameState.tagline && gameState.tagline.trim()) {
+        taglineEl.textContent = gameState.tagline;
+        taglineEl.classList.remove('hidden');
+      } else {
+        taglineEl.classList.add('hidden');
+      }
+
+      document.getElementById('event-datetime-display').textContent = gameState.eventDate;
+      document.getElementById('call-host-link').href = `tel:${gameState.hostPhone.replace(/\s+/g, '')}`;
+      document.getElementById('call-host-strip').classList.toggle('hidden', gameState.showCallBar === false);
+
+      const hostBtn = document.getElementById('btn-toggle-admin');
+      const syncDot = document.getElementById('sync-dot');
+      const syncText = document.getElementById('sync-status-text');
+      if (gameState.isHostLocked) {
+        hostBtn.innerHTML = `<span>🔒 Host Locked</span>`;
+        hostBtn.className = "bg-rose-950 hover:bg-rose-900 text-amber-300 border border-amber-400/50 text-[11px] font-extrabold px-2.5 py-1 rounded shadow cursor-pointer transition flex items-center gap-1";
+        syncDot.className = "w-2 h-2 rounded-full bg-amber-400 inline-block shrink-0";
+        syncText.textContent = "Player View Mode • Host PIN Protected";
+        document.getElementById('admin-panel').classList.add('hidden');
+      } else {
+        hostBtn.innerHTML = `<span>⚙️ Host Control</span>`;
+        hostBtn.className = "bg-slate-900 hover:bg-slate-800 text-amber-300 text-[11px] font-extrabold px-2.5 py-1 rounded shadow cursor-pointer transition flex items-center gap-1";
+        syncDot.className = "w-2 h-2 rounded-full bg-lime-400 animate-pulse inline-block shrink-0";
+        syncText.textContent = "Host Unlocked • Full Control";
+      }
+
+      const btnBook = document.getElementById('mode-btn-booking');
+      const btnLive = document.getElementById('mode-btn-live');
+      if (gameState.mode === 'live') {
+        btnLive.className = "px-3 py-1.5 bg-emerald-500 text-slate-950 font-black";
+        btnBook.className = "px-3 py-1.5 bg-slate-800 text-slate-300";
+      } else {
+        btnBook.className = "px-3 py-1.5 bg-cyan-400 text-slate-950 font-black";
+        btnLive.className = "px-3 py-1.5 bg-slate-800 text-slate-300";
+      }
+
+      renderMasterBoard();
+      renderDeclaredCircles();
+      renderTicketsStream();
+      renderKhataStats();
+      renderPlayersDirectory();
+      renderPrizesConfig();
+    }
+
+    function renderMasterBoard() {
+      const board = document.getElementById('master-board-grid');
+      const calledSet = new Set(gameState.calledNumbers);
+      const latestNum = gameState.calledNumbers.length > 0 ? gameState.calledNumbers[gameState.calledNumbers.length - 1] : null;
+
+      let html = '';
+      for (let n = 1; n <= 90; n++) {
+        const isCalled = calledSet.has(n), isLatest = n === latestNum;
+        html += `<button type="button" onclick="toggleManualBoardNumber(${n})" class="board-cell aspect-[1.25/1] flex items-center justify-center text-xs sm:text-sm cursor-pointer ${isCalled ? 'called' : ''} ${isLatest ? 'latest' : ''}">${n}</button>`;
+      }
+      board.innerHTML = html;
+      document.getElementById('admin-called-count').textContent = `${gameState.calledNumbers.length} / 90`;
+      if (latestNum) {
+        document.getElementById('admin-last-lingo').textContent = TAMBOLA_LINGO[latestNum] || `Number ${latestNum}`;
+        document.getElementById('live-lingo-subtitle').textContent = `Last Call: ${latestNum} — ${TAMBOLA_LINGO[latestNum] || ''}`;
+      } else {
+        document.getElementById('admin-last-lingo').textContent = "Ready to Start";
+        document.getElementById('live-lingo-subtitle').textContent = "Waiting for first number...";
+      }
+    }
+
+    function renderDeclaredCircles() {
+      const container = document.getElementById('declared-circles-container');
+      const called = gameState.calledNumbers;
+      if (called.length === 0) {
+        container.innerHTML = `<span class="text-xs font-bold text-yellow-200 bg-black/45 px-3.5 py-1.5 rounded-full border border-white/20">No numbers declared yet — Book your coupon below!</span>`;
+        return;
+      }
+      container.innerHTML = called.slice(-11).reverse().map((num, idx) => `
+        <div class="declared-badge ${idx === 0 ? 'latest-badge animate-pop' : ''} w-10 h-10 sm:w-11 sm:h-11 rounded-full flex items-center justify-center font-black text-sm sm:text-base">${num}</div>
+      `).join('');
+    }
+
+    function evaluateTicketWinners(grid, calledSet) {
+      const enabledPrizes = gameState.prizes.filter(p => p.enabled);
+      const isEnabled = (id) => enabledPrizes.some(p => p.id === id);
+      const badges = [];
+      let totalMatched = 0, rowMatches = [0, 0, 0];
+      for (let r = 0; r < 3; r++) {
+        for (let c = 0; c < 9; c++) {
+          if (grid[r][c] !== null && calledSet.has(grid[r][c])) { rowMatches[r]++; totalMatched++; }
+        }
+      }
+      const topNums = grid[0].filter(n => n !== null), botNums = grid[2].filter(n => n !== null);
+      const allCorners = [topNums[0], topNums[topNums.length - 1], botNums[0], botNums[botNums.length - 1]].every(n => calledSet.has(n));
+
+      if (gameState.autoClaimVerify) {
+        if (totalMatched === 15 && (isEnabled('fh1') || isEnabled('fh2') || isEnabled('fh3'))) badges.push("👑 FULL HOUSE");
+        else {
+          if (totalMatched >= 5 && isEnabled('jaldi5')) badges.push("⚡ Jaldi 5");
+          if (rowMatches[0] === 5 && isEnabled('top')) badges.push("⬆️ Top Line");
+          if (rowMatches[1] === 5 && isEnabled('middle')) badges.push("➡️ Middle Line");
+          if (rowMatches[2] === 5 && isEnabled('bottom')) badges.push("⬇️ Bottom Line");
+          if (allCorners && isEnabled('corners')) badges.push("📐 4 Corners");
+        }
+      }
+      return { badges, totalMatched };
+    }
+
+    function renderTicketsStream() {
+      const container = document.getElementById('tickets-stream-container');
+      const filterBar = document.getElementById('filter-status-bar');
+      const calledSet = new Set(gameState.calledNumbers);
+      const isLiveMode = gameState.mode === 'live' || gameState.calledNumbers.length > 0;
+
+      let visibleTickets = ticketsList;
+      if (filterCouponCode) {
+        const clean = filterCouponCode.replace(/^0+/, '');
+        visibleTickets = ticketsList.filter(t => t.code.includes(filterCouponCode) || String(t.id) === clean);
+        filterBar.classList.remove('hidden');
+        document.getElementById('filter-status-text').textContent = `Showing ${visibleTickets.length} matching coupon(s) for "${filterCouponCode}"`;
+      } else {
+        filterBar.classList.add('hidden');
+      }
+
+      if (visibleTickets.length === 0) {
+        container.innerHTML = `<div class="bg-white/95 rounded-xl p-6 text-center shadow"><p class="text-sm font-black text-slate-800">No coupon found for "${escapeHtml(filterCouponCode)}"</p><button onclick="clearCouponFilter()" class="mt-3 bg-[#ffd700] text-black font-black text-xs px-4 py-2 rounded-lg shadow">Show All Coupons</button></div>`;
+        return;
+      }
+
+      const detectedWinners = [];
+      (gameState.manualWinners || []).forEach(mw => {
+        detectedWinners.push({ code: mw.code, buyer: mw.buyer || gameState.bookings[String(mw.couponId)] || "Player", label: `🏅 ${mw.prizeLabel}${mw.amount ? ` (₹${mw.amount})` : ''}` });
+      });
+
+      container.innerHTML = visibleTickets.map(ticket => {
+        const buyerName = gameState.bookings[String(ticket.id)] || "";
+        const isSold = Boolean(buyerName);
+        const meta = isSold ? (gameState.playerMeta[buyerName] || { status: 'paid' }) : null;
+        const isPending = meta && meta.status === 'pending';
+        const { badges, totalMatched } = evaluateTicketWinners(ticket.grid, calledSet);
+        const manualBadges = (gameState.manualWinners || []).filter(mw => mw.couponId === ticket.id).map(mw => `🏅 ${mw.prizeLabel}`);
+        const combined = [...manualBadges, ...badges];
+
+        if (isSold && badges.length > 0) detectedWinners.push({ code: ticket.code, buyer: buyerName, label: badges[badges.length - 1] });
+
+        const ownerPill = isSold
+          ? `<button type="button" onclick="handleTicketBadgeClick(${ticket.id})" class="bg-[#00e676] hover:bg-emerald-300 active:scale-95 text-black font-black text-xs sm:text-sm px-3 py-0.5 rounded-full shadow-xs inline-flex items-center gap-1.5 max-w-[220px] cursor-pointer transition"><span class="truncate">${escapeHtml(buyerName)}</span>${isPending ? `<span class="bg-amber-300 text-amber-950 text-[9px] font-black px-1.5 py-0.2 rounded-full shrink-0">⏳</span>` : ''}<span class="text-[10px] opacity-75 shrink-0">✏️</span></button>`
+          : `<button type="button" onclick="handleTicketBadgeClick(${ticket.id})" class="bg-white/95 hover:bg-yellow-300 active:scale-95 text-red-700 font-extrabold text-[11px] sm:text-xs px-2.5 py-0.5 rounded-full shadow-xs inline-flex items-center gap-1 cursor-pointer transition"><span>Available</span><span class="text-[10px] opacity-75 shrink-0">✏️</span></button>`;
+
+        const winnerRibbon = combined.length ? `<div class="bg-yellow-300 text-red-950 text-[11px] font-black px-2 py-0.5 rounded mt-1 flex flex-wrap gap-1.5">${combined.map(b => `<span>${b}</span>`).join(' • ')}</div>` : '';
+
+        const rowsHtml = ticket.grid.map(row => `
+          <div class="grid grid-cols-9 gap-1 sm:gap-1.5">
+            ${row.map(num => {
+              if (num === null) return `<div class="ticket-live-cell aspect-[1.15/1]"></div>`;
+              const isDaubed = isLiveMode && calledSet.has(num);
+              return `<div class="ticket-live-cell ${isDaubed ? 'daubed' : ''} aspect-[1.15/1] flex items-center justify-center font-black text-sm sm:text-base shadow-2xs">${num}</div>`;
+            }).join('')}
+          </div>
+        `).join('');
+
+        return `
+          <article class="${isLiveMode ? 'ticket-live-wrapper' : 'ticket-pregame-wrapper'} rounded-md p-2 shadow-md">
+            <div class="flex items-center justify-between mb-1.5 px-0.5">
+              <div class="flex items-center gap-2"><span class="font-black text-base sm:text-lg text-black leading-none">${ticket.code}</span><span class="text-[11px] font-extrabold text-purple-950 bg-white/65 px-1.5 py-0.5 rounded">${totalMatched}/15</span></div>
+              ${ownerPill}
+            </div>
+            <div class="space-y-1 sm:space-y-1.5">${rowsHtml}</div>
+            ${winnerRibbon}
+          </article>
+        `;
+      }).join('');
+
+      const winnersBanner = document.getElementById('winners-banner');
+      if (detectedWinners.length > 0) {
+        winnersBanner.classList.remove('hidden');
+        const pool = getTotalPrizePool();
+        document.getElementById('winners-pool-pill').textContent = pool > 0 ? `Pool: ₹${pool}` : '';
+        document.getElementById('winners-list').innerHTML = detectedWinners.map(w => `<span class="bg-red-800 text-white px-2.5 py-1 rounded-full shadow-xs">#${w.code} (${escapeHtml(w.buyer)}): ${w.label}</span>`).join('');
+      } else {
+        winnersBanner.classList.add('hidden');
+      }
+    }
+
+    window.handleTicketBadgeClick = function(ticketId) {
+      if (gameState.isHostLocked) {
+        const ticket = ticketsList.find(t => t.id === ticketId);
+        if (!ticket) return;
+        const buyer = gameState.bookings[String(ticketId)] || "";
+        const calledSet = new Set(gameState.calledNumbers);
+        const { badges, totalMatched } = evaluateTicketWinners(ticket.grid, calledSet);
+
+        document.getElementById('pt-info-title').textContent = `🎫 Coupon #${ticket.code} Details`;
+        document.getElementById('pt-info-body').innerHTML = buyer ? `
+          <div class="bg-slate-800 p-3 rounded-xl space-y-1.5">
+            <div><span class="text-slate-400">Player Name:</span> <strong class="text-emerald-400">${escapeHtml(buyer)}</strong></div>
+            <div><span class="text-slate-400">Matched Numbers:</span> <strong class="text-yellow-300">${totalMatched} / 15</strong></div>
+            ${badges.length ? `<div><span class="text-slate-400">Patterns Hit:</span> <strong class="text-amber-300">${badges.join(', ')}</strong></div>` : ''}
+          </div>
+        ` : `<div class="bg-slate-800 p-3 rounded-xl space-y-1"><div class="text-emerald-300 font-bold">✅ Coupon available for booking!</div></div>`;
+
+        window.currentSelectedTicketIdForEdit = ticketId;
+        const modal = document.getElementById('player-ticket-info-modal');
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        return;
+      }
+
+      openPlayerEditModal(ticketId);
+    };
+
+    window.requestEditFromPlayerModal = function() {
+      closePlayerTicketInfoModal();
+      openPinUnlockModal(() => {
+        openPlayerEditModal(window.currentSelectedTicketIdForEdit);
+      });
+    };
+
+    window.closePlayerTicketInfoModal = function() {
+      const modal = document.getElementById('player-ticket-info-modal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    };
+
+    // Keypad controls
+    window.keypadPress = function(digit) {
+      const input = document.getElementById('coupon-search-input');
+      if (input.value.length >= 4) return;
+      input.value += digit;
+      filterCouponCode = input.value.trim();
+      renderTicketsStream();
+    };
+
+    window.keypadDelete = function() {
+      const input = document.getElementById('coupon-search-input');
+      input.value = input.value.slice(0, -1);
+      filterCouponCode = input.value.trim();
+      renderTicketsStream();
+    };
+
+    window.keypadConfirm = function() {
+      filterCouponCode = document.getElementById('coupon-search-input').value.trim();
+      renderTicketsStream();
+      document.getElementById('tickets-stream-container').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    };
+
+    window.handleCouponInputChange = function() {
+      filterCouponCode = document.getElementById('coupon-search-input').value.trim();
+      renderTicketsStream();
+    };
+
+    window.clearCouponFilter = function() {
+      document.getElementById('coupon-search-input').value = "";
+      filterCouponCode = "";
+      renderTicketsStream();
+    };
+
+    // Admin & Caller Controls
+    window.switchAdminTab = function(tab) {
+      ['caller', 'booking', 'players', 'prizes', 'settings'].forEach(t => {
+        const view = document.getElementById(`admin-view-${t}`);
+        const btn = document.getElementById(`admin-tab-${t}`);
+        if (t === tab) {
+          view.classList.remove('hidden');
+          btn.className = "py-2 px-2.5 rounded-lg bg-yellow-400 text-slate-950 font-black whitespace-nowrap shrink-0";
+        } else {
+          view.classList.add('hidden');
+          btn.className = "py-2 px-2.5 rounded-lg text-slate-300 hover:text-white font-bold whitespace-nowrap shrink-0";
+        }
+      });
+      if (tab === 'players') renderPlayersDirectory();
+      if (tab === 'prizes') renderPrizesConfig();
+    };
+
+    window.setGameMode = function(newMode) {
+      gameState.mode = newMode;
+      renderAll();
+      persistGameState();
+      showToast(newMode === 'live' ? "🔴 Switched to LIVE Game Arena!" : "📋 Switched to Booking Sheet Mode");
+    };
+
+    window.callNextRandomNumber = function() {
+      const calledSet = new Set(gameState.calledNumbers);
+      const remaining = [];
+      for (let i = 1; i <= 90; i++) { if (!calledSet.has(i)) remaining.push(i); }
+      if (remaining.length === 0) { stopAutoCall(); showToast("🎉 All 90 numbers declared!"); return; }
+      const picked = remaining[Math.floor(Math.random() * remaining.length)];
+      gameState.calledNumbers.push(picked);
+      gameState.mode = 'live';
+      lastAnnouncedNumber = picked;
+      renderAll();
+      persistGameState();
+      announceNumber(picked);
+    };
+
+    window.undoLastCalledNumber = function() {
+      if (gameState.calledNumbers.length === 0) return;
+      const removed = gameState.calledNumbers.pop();
+      lastAnnouncedNumber = gameState.calledNumbers[gameState.calledNumbers.length - 1] || null;
+      renderAll();
+      persistGameState();
+      showToast(`↩️ Undid Number ${removed}`);
+    };
+
+    window.reannounceLastNumber = function() {
+      if (gameState.calledNumbers.length === 0) return;
+      const last = gameState.calledNumbers[gameState.calledNumbers.length - 1];
+      announceNumber(last);
+      showToast(`🔁 Repeating Number ${last}`);
+    };
+
+    window.toggleManualBoardNumber = function(num) {
+      if (gameState.isHostLocked) {
+        showToast(`Number ${num}: ${gameState.calledNumbers.includes(num) ? 'DECLARED' : 'Not called yet'}`);
+        return;
+      }
+      const idx = gameState.calledNumbers.indexOf(num);
+      if (idx > -1) gameState.calledNumbers.splice(idx, 1);
+      else { gameState.calledNumbers.push(num); gameState.mode = 'live'; lastAnnouncedNumber = num; announceNumber(num); }
+      renderAll();
+      persistGameState();
+    };
+
+    function announceNumber(num) {
+      if (sfxEnabled) {
+        try {
+          const AudioCtx = window.AudioContext || window.webkitAudioContext;
+          if (AudioCtx) {
+            const ctx = new AudioCtx();
+            const osc = ctx.createOscillator(), gain = ctx.createGain();
+            osc.frequency.setValueAtTime(580, ctx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(920, ctx.currentTime + 0.12);
+            gain.gain.setValueAtTime(0.1, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.14);
+            osc.connect(gain); gain.connect(ctx.destination);
+            osc.start(); osc.stop(ctx.currentTime + 0.15);
+          }
+        } catch (e) {}
+      }
+      if (!voiceEnabled || !('speechSynthesis' in window)) return;
+      window.speechSynthesis.cancel();
+      const text = lingoEnabled ? (TAMBOLA_LINGO[num] || `Number ${num}`) : `Number ${num}`;
+      const utter = new SpeechSynthesisUtterance(text);
+      utter.lang = 'en-IN'; utter.rate = 0.95;
+      window.speechSynthesis.speak(utter);
+    }
+
+    window.toggleVoice = function() {
+      voiceEnabled = !voiceEnabled;
+      const btn = document.getElementById('btn-voice-toggle');
+      btn.textContent = voiceEnabled ? "🔊 Voice ON" : "🔇 Voice OFF";
+      btn.className = voiceEnabled ? "py-2 px-2 rounded-lg bg-emerald-700 text-white border border-emerald-500" : "py-2 px-2 rounded-lg bg-slate-800 text-slate-400 border border-slate-700";
+    };
+
+    window.toggleLingoMode = function() {
+      lingoEnabled = !lingoEnabled;
+      const btn = document.getElementById('btn-lingo-toggle');
+      btn.textContent = lingoEnabled ? "🗣️ Lingo ON" : "🗣️ Plain No.";
+      btn.className = lingoEnabled ? "py-2 px-2 rounded-lg bg-cyan-800 text-cyan-100 border border-cyan-600" : "py-2 px-2 rounded-lg bg-slate-800 text-slate-400 border border-slate-700";
+    };
+
+    window.toggleSfxMode = function() {
+      sfxEnabled = !sfxEnabled;
+      const btn = document.getElementById('btn-sfx-toggle');
+      btn.textContent = sfxEnabled ? "🔔 Chime ON" : "🔕 Chime OFF";
+      btn.className = sfxEnabled ? "py-2 px-2 rounded-lg bg-emerald-700 text-white border border-emerald-500" : "py-2 px-2 rounded-lg bg-slate-800 text-slate-400 border border-slate-700";
+    };
+
+    window.toggleAutoCall = function() {
+      if (autoCallInterval) stopAutoCall(); else startAutoCall();
+    };
+
+    function startAutoCall() {
+      autoSpeedMs = parseInt(document.getElementById('auto-speed-select').value, 10);
+      const btn = document.getElementById('btn-auto-call'), barWrap = document.getElementById('auto-countdown-wrap'), bar = document.getElementById('auto-countdown-bar');
+      btn.textContent = "⏸️ Auto: ON"; btn.className = "py-2 px-2 rounded-lg bg-amber-400 text-black font-black border border-yellow-300";
+      barWrap.classList.remove('hidden');
+      callNextRandomNumber();
+      let elapsed = 0;
+      autoCountdownTimer = setInterval(() => {
+        elapsed += 100;
+        bar.style.width = `${Math.max(0, 100 - (elapsed / autoSpeedMs) * 100)}%`;
+      }, 100);
+      autoCallInterval = setInterval(() => {
+        elapsed = 0;
+        if (gameState.calledNumbers.length >= 90) stopAutoCall(); else callNextRandomNumber();
+      }, autoSpeedMs);
+    }
+
+    function stopAutoCall() {
+      clearInterval(autoCallInterval); clearInterval(autoCountdownTimer);
+      autoCallInterval = null; autoCountdownTimer = null;
+      const btn = document.getElementById('btn-auto-call'), barWrap = document.getElementById('auto-countdown-wrap');
+      if (btn) { btn.textContent = "⏱️ Auto: OFF"; btn.className = "py-2 px-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-white border border-slate-700"; }
+      if (barWrap) barWrap.classList.add('hidden');
+    }
+
+    window.updateAutoSpeed = function() { if (autoCallInterval) { stopAutoCall(); startAutoCall(); } };
+
+    window.openResetModal = function(type = 'board') {
+      pendingResetType = type;
+      document.getElementById('reset-modal-title').textContent = type === 'factory' ? "⚠️ Full Factory Reset?" : "🔄 Reset Called Numbers?";
+      document.getElementById('reset-modal-desc').textContent = type === 'factory' ? "Erase all bookings and numbers?" : "Clear declared numbers and winners?";
+      const modal = document.getElementById('reset-modal');
+      modal.classList.remove('hidden'); modal.classList.add('flex');
+    };
+
+    window.closeResetModal = function() { document.getElementById('reset-modal').classList.add('hidden'); document.getElementById('reset-modal').classList.remove('flex'); };
+
+    window.confirmResetAction = function() {
+      stopAutoCall();
+      if (pendingResetType === 'factory') {
+        localStorage.removeItem(STORAGE_KEY);
+        gameState.calledNumbers = []; gameState.manualWinners = []; gameState.bookings = {}; gameState.playerMeta = {}; gameState.mode = 'booking'; gameState.isHostLocked = false;
+        ticketsList = buildTicketBatch(gameState.totalTickets);
+        gameState.ticketsSerialized = JSON.stringify(ticketsList.map(t => t.grid));
+        showToast("⚠️ Full factory reset completed!");
+      } else {
+        gameState.calledNumbers = []; gameState.manualWinners = []; gameState.mode = 'booking';
+        showToast("🔄 Board numbers reset!");
+      }
+      closeResetModal(); renderAll(); persistGameState();
+    };
+
+    // Inventory & Booking Config
+    window.applyCouponInventoryConfig = function() {
+      const newTotal = parseInt(document.getElementById('booking-total-tickets').value, 10);
+      const newPrice = Math.max(0, parseInt(document.getElementById('booking-ticket-price').value || "0", 10));
+      gameState.ticketPrice = newPrice;
+      if (newTotal !== gameState.totalTickets) {
+        gameState.totalTickets = newTotal;
+        ticketsList = buildTicketBatch(newTotal);
+        gameState.ticketsSerialized = JSON.stringify(ticketsList.map(t => t.grid));
+      }
+      renderAll(); persistGameState();
+      showToast(`🎟️ Inventory updated: ${newTotal} coupons @ ₹${newPrice}`);
+    };
+
+    function renderKhataStats() {
+      const price = Number(gameState.ticketPrice || 0);
+      let sold = 0, paid = 0, pending = 0;
+      Object.entries(gameState.bookings).forEach(([idStr, name]) => {
+        if (!name || parseInt(idStr, 10) > gameState.totalTickets) return;
+        sold++;
+        if ((gameState.playerMeta[name] || {}).status === 'pending') pending++; else paid++;
+      });
+      document.getElementById('stat-sold-count').textContent = `${sold} / ${gameState.totalTickets}`;
+      document.getElementById('stat-paid-amount').textContent = `₹${paid * price}`;
+      document.getElementById('stat-pending-amount').textContent = `₹${pending * price}`;
+      document.getElementById('khata-revenue-badge').textContent = `Collected: ₹${paid * price}`;
+    }
+
+    function parseCouponRangeInput(raw) {
+      const ids = new Set();
+      raw.split(',').forEach(part => {
+        const trimmed = part.trim();
+        if (!trimmed) return;
+        if (trimmed.includes('-')) {
+          const [s, e] = trimmed.split('-').map(n => parseInt(n, 10));
+          if (!isNaN(s) && !isNaN(e)) { for (let i = Math.min(s, e); i <= Math.max(s, e); i++) { if (i >= 1 && i <= gameState.totalTickets) ids.add(i); } }
+        } else { const num = parseInt(trimmed, 10); if (!isNaN(num) && num >= 1 && num <= gameState.totalTickets) ids.add(num); }
+      });
+      return Array.from(ids).sort((a, b) => a - b);
+    }
+
+    window.bookCouponsForFriend = function(andShareWhatsApp = false) {
+      const buyer = document.getElementById('book-buyer-name').value.trim();
+      const rangeStr = document.getElementById('book-coupon-range').value.trim();
+      const phone = document.getElementById('book-buyer-phone').value.trim();
+      const status = document.getElementById('book-payment-status').value;
+
+      if (!buyer) { showToast("⚠️ Enter Friend's Name!"); return; }
+      const couponIds = parseCouponRangeInput(rangeStr);
+      if (couponIds.length === 0) { showToast(`⚠️ Enter valid coupon numbers (1 to ${gameState.totalTickets})`); return; }
+
+      couponIds.forEach(id => { gameState.bookings[String(id)] = buyer; });
+      gameState.playerMeta[buyer] = { phone: phone || (gameState.playerMeta[buyer] || {}).phone || "", status };
+      document.getElementById('book-coupon-range').value = "";
+      renderAll(); persistGameState();
+      showToast(`✅ Assigned ${couponIds.length} coupon(s) to ${buyer}`);
+      if (andShareWhatsApp) shareBookingWhatsApp(buyer, couponIds.map(id => String(id).padStart(3, '0')), phone);
+    };
+
+    window.markAllPendingAsPaid = function() {
+      let updated = 0;
+      Object.keys(gameState.playerMeta).forEach(name => {
+        if (gameState.playerMeta[name].status === 'pending') { gameState.playerMeta[name].status = 'paid'; updated++; }
+      });
+      renderAll(); persistGameState();
+      showToast(`✅ Marked ${updated} pending player(s) as Paid!`);
+    };
+
+    window.regenerateAllTicketsPreGame = function() {
+      if (gameState.calledNumbers.length > 0) { showToast("⚠️ Reset board numbers before shuffling!"); return; }
+      ticketsList = buildTicketBatch(gameState.totalTickets);
+      gameState.ticketsSerialized = JSON.stringify(ticketsList.map(t => t.grid));
+      renderAll(); persistGameState();
+      showToast("🔀 Shuffled all tickets!");
+    };
+
+    window.clearAllBookingsBulk = function() {
+      gameState.bookings = {}; gameState.playerMeta = {};
+      renderAll(); persistGameState();
+      showToast("🗑️ Cleared all bookings!");
+    };
+
+    // Player Edit Modal
+    window.openPlayerEditModal = function(ticketId, defaultScope = 'single') {
+      const currentOwner = gameState.bookings[String(ticketId)] || "";
+      const meta = currentOwner ? (gameState.playerMeta[currentOwner] || { phone: '', status: 'paid' }) : { phone: '', status: 'paid' };
+      const code = String(ticketId).padStart(3, '0');
+
+      activeEditState = { ticketId, originalPlayer: currentOwner, scope: defaultScope, paymentStatus: meta.status || 'paid' };
+      document.getElementById('edit-modal-title').textContent = `✏️ Edit Coupon #${code}`;
+      document.getElementById('edit-modal-subtitle').textContent = currentOwner ? `Assigned to ${currentOwner}` : `Available coupon`;
+      document.getElementById('edit-player-name').value = currentOwner;
+      document.getElementById('edit-player-phone').value = meta.phone || "";
+      document.getElementById('edit-range-start').value = ticketId;
+      document.getElementById('edit-range-end').value = ticketId;
+
+      const allPlayerBtn = document.getElementById('scope-btn-all-player');
+      if (currentOwner) {
+        const count = Object.values(gameState.bookings).filter(n => n === currentOwner).length;
+        allPlayerBtn.classList.remove('hidden'); allPlayerBtn.textContent = `All ${count} of Player`;
+      } else { allPlayerBtn.classList.add('hidden'); }
+
+      setEditScope(defaultScope);
+      setEditPaymentStatus(activeEditState.paymentStatus);
+      renderQuickPlayerChips();
+
+      const modal = document.getElementById('player-edit-modal');
+      modal.classList.remove('hidden'); modal.classList.add('flex');
+    };
+
+    window.closePlayerEditModal = function() { document.getElementById('player-edit-modal').classList.add('hidden'); document.getElementById('player-edit-modal').classList.remove('flex'); };
+
+    window.setEditScope = function(scope) {
+      activeEditState.scope = scope;
+      const rangeBox = document.getElementById('edit-range-box');
+      ['single', 'range', 'all-player'].forEach(s => {
+        const btn = document.getElementById(`scope-btn-${s}`);
+        if (!btn) return;
+        if (s === scope) btn.className = btn.className.replace('bg-slate-700 text-slate-300', '').trim() + ' bg-yellow-400 text-slate-950';
+        else btn.className = btn.className.replace('bg-yellow-400 text-slate-950', '').trim() + ' bg-slate-700 text-slate-300';
+      });
+      rangeBox.classList.toggle('hidden', scope !== 'range');
+    };
+
+    window.setEditPaymentStatus = function(status) {
+      activeEditState.paymentStatus = status;
+      const btnPaid = document.getElementById('pay-btn-paid'), btnPending = document.getElementById('pay-btn-pending');
+      if (status === 'paid') {
+        btnPaid.className = "py-1.5 rounded-lg bg-emerald-500 text-slate-950";
+        btnPending.className = "py-1.5 rounded-lg text-slate-300";
+      } else {
+        btnPending.className = "py-1.5 rounded-lg bg-amber-500 text-slate-950";
+        btnPaid.className = "py-1.5 rounded-lg text-slate-300";
+      }
+    };
+
+    function renderQuickPlayerChips() {
+      const container = document.getElementById('edit-quick-players');
+      const uniqueNames = Array.from(new Set(Object.values(gameState.bookings))).filter(Boolean).slice(0, 8);
+      if (uniqueNames.length === 0) { container.innerHTML = `<span class="text-[10px] text-slate-500">No previous players yet</span>`; return; }
+      container.innerHTML = uniqueNames.map(name => `
+        <button type="button" onclick="document.getElementById('edit-player-name').value='${escapeHtml(name)}'" class="bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-slate-700 px-2 py-0.5 rounded text-[11px] font-bold">${escapeHtml(name)}</button>
+      `).join('');
+    }
+
+    window.savePlayerEditModal = function() {
+      const newName = document.getElementById('edit-player-name').value.trim();
+      const newPhone = document.getElementById('edit-player-phone').value.trim();
+      const status = activeEditState.paymentStatus;
+      const { ticketId, originalPlayer, scope } = activeEditState;
+
+      if (scope === 'single') {
+        if (originalPlayer && originalPlayer !== newName) {
+          const stillHas = Object.entries(gameState.bookings).some(([id, name]) => name === originalPlayer && parseInt(id, 10) !== ticketId);
+          if (!stillHas) delete gameState.playerMeta[originalPlayer];
+        }
+        if (newName) {
+          gameState.bookings[String(ticketId)] = newName;
+          const prev = gameState.playerMeta[newName] || {};
+          gameState.playerMeta[newName] = { phone: newPhone || prev.phone || "", status };
+        } else {
+          delete gameState.bookings[String(ticketId)];
+        }
+      } else if (scope === 'range') {
+        const start = parseInt(document.getElementById('edit-range-start').value, 10);
+        const end = parseInt(document.getElementById('edit-range-end').value, 10);
+        if (isNaN(start) || isNaN(end)) { showToast("⚠️ Enter valid range numbers"); return; }
+        for (let i = Math.min(start, end); i <= Math.max(start, end); i++) {
+          if (i >= 1 && i <= gameState.totalTickets) {
+            if (newName) gameState.bookings[String(i)] = newName; else delete gameState.bookings[String(i)];
+          }
+        }
+        if (newName) {
+          const prev = gameState.playerMeta[newName] || {};
+          gameState.playerMeta[newName] = { phone: newPhone || prev.phone || "", status };
+        }
+      } else if (scope === 'all-player' && originalPlayer) {
+        Object.keys(gameState.bookings).forEach(id => {
+          if (gameState.bookings[id] === originalPlayer) {
+            if (newName) gameState.bookings[id] = newName; else delete gameState.bookings[id];
+          }
+        });
+        if (originalPlayer !== newName && originalPlayer in gameState.playerMeta) delete gameState.playerMeta[originalPlayer];
+        if (newName) {
+          const prev = gameState.playerMeta[originalPlayer] || {};
+          gameState.playerMeta[newName] = { phone: newPhone || prev.phone || "", status };
+        }
+      }
+
+      closePlayerEditModal(); renderAll(); persistGameState();
+      showToast("💾 Saved coupon changes!");
+    };
+
+    window.clearPlayerFromModal = function() {
+      document.getElementById('edit-player-name').value = "";
+      savePlayerEditModal();
+    };
+
+    window.shareEditedPlayerWhatsApp = function() {
+      const name = document.getElementById('edit-player-name').value.trim();
+      const phone = document.getElementById('edit-player-phone').value.trim();
+      const ticketId = activeEditState.ticketId;
+      const code = String(ticketId).padStart(3, '0');
+      const text = encodeURIComponent(`Hi ${name || 'Player'}, your Tambola Coupon #${code} for ${gameState.clubName} is confirmed! Price: ₹${gameState.ticketPrice}. Good luck! 🎟️✨`);
+      const url = phone ? `https://wa.me/91${phone.replace(/\D/g, '')}?text=${text}` : `https://wa.me/?text=${text}`;
+      window.open(url, '_blank');
+    };
+
+    function shareBookingWhatsApp(buyer, codes, phone) {
+      const text = encodeURIComponent(`Hi ${buyer}, your Tambola Coupon(s) #${codes.join(', ')} for ${gameState.clubName} are confirmed! Total: ₹${codes.length * gameState.ticketPrice}. 🎟️🎉`);
+      const url = phone ? `https://wa.me/91${phone.replace(/\D/g, '')}?text=${text}` : `https://wa.me/?text=${text}`;
+      window.open(url, '_blank');
+    }
+
+    // Players Directory
+    function renderPlayersDirectory() {
+      const container = document.getElementById('players-directory-list');
+      const search = (document.getElementById('players-dir-search').value || "").toLowerCase();
+      const map = {};
+
+      Object.entries(gameState.bookings).forEach(([idStr, name]) => {
+        if (!name || parseInt(idStr, 10) > gameState.totalTickets) return;
+        if (!map[name]) map[name] = { coupons: [], status: (gameState.playerMeta[name] || {}).status || 'paid', phone: (gameState.playerMeta[name] || {}).phone || '' };
+        map[name].coupons.push(parseInt(idStr, 10));
+      });
+
+      const players = Object.entries(map).filter(([name, data]) => {
+        if (!search) return true;
+        return name.toLowerCase().includes(search) || data.coupons.some(c => String(c).includes(search));
+      });
+
+      document.getElementById('players-dir-summary').textContent = `${Object.keys(map).length} Players • ${Object.keys(gameState.bookings).length} Sold Coupons`;
+
+      if (players.length === 0) {
+        container.innerHTML = `<div class="p-3 text-center text-slate-500 font-semibold">No assigned players found</div>`;
+        return;
+      }
+
+      const price = Number(gameState.ticketPrice || 0);
+      container.innerHTML = players.map(([name, data]) => {
+        data.coupons.sort((a, b) => a - b);
+        const codesStr = data.coupons.map(c => String(c).padStart(3, '0')).join(', ');
+        const totalDue = data.coupons.length * price;
+        const isPending = data.status === 'pending';
+
+        return `
+          <div class="bg-slate-950 p-2.5 rounded-xl border border-slate-800 flex items-center justify-between gap-2">
+            <div class="truncate">
+              <div class="font-black text-white flex items-center gap-1.5">
+                <span>${escapeHtml(name)}</span>
+                <span class="${isPending ? 'bg-amber-950 text-amber-300 border border-amber-700' : 'bg-emerald-950 text-emerald-300 border border-emerald-700'} text-[9px] px-1.5 py-0.2 rounded-full">${isPending ? 'Pending ⏳' : 'Paid ✅'}</span>
+              </div>
+              <div class="text-[11px] text-cyan-300 font-semibold mt-0.5 truncate">Coupons (${data.coupons.length}): ${codesStr}</div>
+              <div class="text-[10px] text-slate-400">Total: ₹${totalDue} ${data.phone ? '• 📞 ' + escapeHtml(data.phone) : ''}</div>
+            </div>
+            <div class="flex items-center gap-1 shrink-0">
+              <button onclick="openPlayerEditModal(${data.coupons[0]})" class="bg-slate-800 hover:bg-slate-700 text-yellow-300 px-2.5 py-1 rounded-lg font-black text-[11px]">Edit</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // Prizes Config
+    function renderPrizesConfig() {
+      const list = document.getElementById('prizes-config-list');
+      const select = document.getElementById('manual-winner-prize');
+
+      list.innerHTML = gameState.prizes.map((p, idx) => `
+        <div class="bg-slate-950 p-2 rounded-lg border border-slate-800 flex items-center justify-between gap-2">
+          <div class="flex items-center gap-2">
+            <input type="checkbox" ${p.enabled ? 'checked' : ''} onchange="togglePrizeEnabled(${idx})" class="w-4 h-4 accent-yellow-400 cursor-pointer" />
+            <span class="font-bold text-white text-xs">${escapeHtml(p.label)}</span>
+          </div>
+          <div class="flex items-center gap-1">
+            <span class="text-[10px] text-slate-400">₹</span>
+            <input type="number" value="${p.amount}" min="0" step="50" onchange="updatePrizeAmount(${idx}, this.value)" class="w-16 px-1.5 py-1 rounded bg-slate-900 border border-slate-700 text-yellow-300 font-black text-xs text-center" />
+          </div>
+        </div>
+      `).join('');
+
+      const enabled = gameState.prizes.filter(p => p.enabled);
+      select.innerHTML = enabled.map(p => `<option value="${p.id}">${escapeHtml(p.label)} (₹${p.amount})</option>`).join('');
+      document.getElementById('total-prize-pool-text').textContent = `Total Prize Pool: ₹${getTotalPrizePool()}`;
+    }
+
+    function getTotalPrizePool() {
+      return gameState.prizes.filter(p => p.enabled).reduce((sum, p) => sum + Number(p.amount || 0), 0);
+    }
+
+    window.togglePrizeEnabled = function(idx) {
+      gameState.prizes[idx].enabled = !gameState.prizes[idx].enabled;
+      renderAll(); persistGameState();
+    };
+
+    window.updatePrizeAmount = function(idx, val) {
+      gameState.prizes[idx].amount = Math.max(0, parseInt(val || "0", 10));
+      renderAll(); persistGameState();
+    };
+
+    window.toggleAutoClaim = function() {
+      gameState.autoClaimVerify = !gameState.autoClaimVerify;
+      const btn = document.getElementById('btn-auto-claim-toggle');
+      btn.textContent = gameState.autoClaimVerify ? "🤖 Auto-Verify: ON" : "🤖 Auto-Verify: OFF";
+      btn.className = gameState.autoClaimVerify ? "px-2.5 py-1 rounded-lg bg-emerald-600 text-white text-[11px] font-black" : "px-2.5 py-1 rounded-lg bg-slate-800 text-slate-400 text-[11px] font-black";
+      renderAll(); persistGameState();
+    };
+
+    window.awardManualWinner = function() {
+      const prizeId = document.getElementById('manual-winner-prize').value;
+      const couponId = parseInt(document.getElementById('manual-winner-coupon').value, 10);
+      if (isNaN(couponId) || couponId < 1 || couponId > gameState.totalTickets) { showToast("⚠️ Enter valid Coupon #"); return; }
+      const prizeObj = gameState.prizes.find(p => p.id === prizeId);
+      if (!prizeObj) return;
+
+      const ticket = ticketsList.find(t => t.id === couponId);
+      const buyer = gameState.bookings[String(couponId)] || "Player #" + couponId;
+
+      gameState.manualWinners.push({ prizeId: prizeObj.id, prizeLabel: prizeObj.label, amount: prizeObj.amount, couponId, code: ticket ? ticket.code : String(couponId).padStart(3, '0'), buyer });
+      renderAll(); persistGameState();
+      showToast(`🏆 Awarded ${prizeObj.label} to Coupon #${couponId} (${buyer})!`);
+    };
+
+    window.shareWinnersWhatsApp = function() {
+      if (!gameState.manualWinners.length) { showToast("No manual winners recorded yet!"); return; }
+      const txt = encodeURIComponent(`🏆 *${gameState.clubName} - WINNERS LIST* 🏆\n\n` + gameState.manualWinners.map(w => `• *${w.prizeLabel}* (₹${w.amount}): Coupon #${w.code} - ${w.buyer}`).join('\n') + `\n\nCongratulations to all winners! 🎉✨`);
+      window.open(`https://wa.me/?text=${txt}`, '_blank');
+    };
+
+    // Settings & Branding
+    window.applyThemePreset = function(themeKey) {
+      gameState.themeKey = themeKey;
+      applyCssThemeVariables();
+      renderAll(); persistGameState();
+      showToast(`🎨 Applied theme: ${themeKey}`);
+    };
+
+    window.saveGameSettings = function() {
+      gameState.clubName = document.getElementById('setting-club-name').value.trim() || "TRIMURTI TAMBOLA";
+      gameState.tagline = document.getElementById('setting-tagline').value.trim();
+      gameState.eventDate = document.getElementById('setting-event-date').value.trim() || "10 Nov 2026 at 8:30 PM";
+      gameState.hostPhone = document.getElementById('setting-host-phone').value.trim() || "+919876543210";
+      gameState.hostPin = document.getElementById('setting-host-pin').value.trim() || "1234";
+      gameState.showCallBar = document.getElementById('setting-show-call-bar').value === 'show';
+
+      renderAll(); persistGameState();
+      showToast("💾 Saved branding & Host PIN successfully!");
+    };
+
+    window.exportBackupJson = function() {
+      const jsonStr = JSON.stringify(gameState);
+      navigator.clipboard.writeText(jsonStr).then(() => {
+        showToast("📤 Copied JSON backup to clipboard!");
+      }).catch(() => {
+        prompt("Copy backup JSON:", jsonStr);
+      });
+    };
+
+    window.openRestoreModal = function() {
+      const modal = document.getElementById('restore-modal');
+      modal.classList.remove('hidden'); modal.classList.add('flex');
+    };
+
+    window.closeRestoreModal = function() {
+      document.getElementById('restore-modal').classList.add('hidden');
+      document.getElementById('restore-modal').classList.remove('flex');
+    };
+
+    window.applyRestoreBackupJson = function() {
+      const raw = document.getElementById('restore-json-textarea').value.trim();
+      try {
+        const parsed = JSON.parse(raw);
+        gameState = { ...gameState, ...parsed };
+        if (gameState.ticketsSerialized) {
+          ticketsList = JSON.parse(gameState.ticketsSerialized).map((grid, idx) => ({ id: idx + 1, code: String(idx + 1).padStart(3, '0'), grid }));
+        }
+        closeRestoreModal();
+        renderAll();
+        persistGameState();
+        showToast("✅ Successfully restored backup state!");
+      } catch (e) {
+        alert("Invalid JSON string! Please check and try again.");
+      }
+    };
+
+    function startLiveClock() {
+      const clockEl = document.getElementById('live-clock-display');
+      setInterval(() => {
+        const now = new Date();
+        clockEl.textContent = now.toLocaleTimeString('en-GB');
+      }, 1000);
+    }
+
+    function escapeHtml(str) {
+      return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById('toast-banner');
+      toast.textContent = msg;
+      toast.classList.remove('opacity-0', 'pointer-events-none');
+      toast.classList.add('opacity-100');
+      setTimeout(() => {
+        toast.classList.remove('opacity-100');
+        toast.classList.add('opacity-0', 'pointer-events-none');
+      }, 2600);
+    }
+
+    window.onload = initApp;
+  </script>
+</body>
+</html>
